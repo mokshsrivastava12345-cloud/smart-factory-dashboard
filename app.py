@@ -14,16 +14,6 @@ if "prev_data" not in st.session_state:
 if "upload_time" not in st.session_state:
     st.session_state.upload_time = None
 
-# ---------- AI ----------
-def predict_demand(stock):
-    return "🚨 Low Stock Risk" if stock < 100 else "✅ Stock Safe"
-
-def best_route():
-    return "🗺️ Route: A → C → D"
-
-def predict_delay(speed):
-    return "🚨 High Delay" if speed < 10 else "✅ Low Delay"
-
 # ---------- DELTA ----------
 def get_delta(current, previous):
     if previous == 0:
@@ -34,6 +24,7 @@ def get_delta(current, previous):
 st.markdown("""
 <style>
 .stApp { background-color: #0e1117; }
+
 .header {
     padding: 20px;
     border-radius: 12px;
@@ -41,6 +32,7 @@ st.markdown("""
     color: white;
     text-align: center;
 }
+
 .card {
     background-color: #1c1f26;
     padding: 20px;
@@ -59,17 +51,16 @@ st.sidebar.markdown("---")
 st.sidebar.write("👤 Dashboard Lead")
 st.sidebar.write("🟢 System Active")
 
-# ---------- LOAD DATA ----------
+# ---------- LOAD CSV ----------
 user_data = None
 
 if uploaded_file is not None:
     user_data = pd.read_csv(uploaded_file)
 
-    # store upload time
     if st.session_state.upload_time is None:
         st.session_state.upload_time = time.time()
 
-# ---------- MODE LOGIC ----------
+# ---------- MODE ----------
 use_csv = False
 
 if st.session_state.upload_time is not None:
@@ -79,7 +70,7 @@ if st.session_state.upload_time is not None:
         use_csv = True
     else:
         use_csv = False
-        st.session_state.upload_time = None  # reset
+        st.session_state.upload_time = None
 
 # ---------- MAIN LOOP ----------
 placeholder = st.empty()
@@ -95,7 +86,7 @@ while True:
         </div>
         """, unsafe_allow_html=True)
 
-        # MODE INDICATOR
+        # MODE DISPLAY
         if use_csv:
             st.info("📂 Real Data Mode (10 sec)")
         else:
@@ -160,6 +151,7 @@ while True:
         else:
             st.success("✅ All machines healthy")
 
+        # POPUP
         if popup:
             st.markdown(f"""
             <div style="
@@ -197,20 +189,44 @@ while True:
         # ---------- AI ----------
         if view == "AI Insights":
             st.markdown('<div class="card">', unsafe_allow_html=True)
-            st.subheader("🧠 THINK Layer")
+            st.subheader("🧠 Row-wise AI Analysis")
 
             if use_csv and user_data is not None:
-                st.dataframe(user_data)
-                st.info(predict_demand(user_data["stock_level"].mean()))
-                st.success(best_route())
 
-                delay = predict_delay(user_data["speed_kmph"].mean())
-                if "High" in delay:
-                    st.error(delay)
-                else:
-                    st.success(delay)
+                for i, row in user_data.iterrows():
+
+                    st.markdown(f"### 📍 Truck {row['truck_id']} | Warehouse {row['warehouse_id']}")
+
+                    col1, col2, col3 = st.columns(3)
+
+                    # STOCK
+                    if row["stock_level"] < 100:
+                        col1.error(f"Stock: {row['stock_level']} → 🚨 Low")
+                    else:
+                        col1.success(f"Stock: {row['stock_level']} → ✅ OK")
+
+                    # SPEED
+                    if row["speed_kmph"] < 10:
+                        col2.error(f"Speed: {row['speed_kmph']} → 🚨 Delay")
+                    elif row["speed_kmph"] < 25:
+                        col2.warning(f"Speed: {row['speed_kmph']} → ⚠️ Slow")
+                    else:
+                        col2.success(f"Speed: {row['speed_kmph']} → ✅ Normal")
+
+                    # AI DECISION
+                    if row["stock_level"] < 100 and row["speed_kmph"] < 10:
+                        col3.error("🚨 Critical")
+                    elif row["stock_level"] < 100:
+                        col3.warning("⚠️ Low Stock")
+                    elif row["speed_kmph"] < 10:
+                        col3.warning("⚠️ Delay Risk")
+                    else:
+                        col3.success("✅ All Good")
+
+                    st.markdown("---")
+
             else:
-                st.warning("Simulation Mode - Upload CSV")
+                st.warning("Upload CSV to activate AI")
 
             st.markdown('</div>', unsafe_allow_html=True)
 
