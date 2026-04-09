@@ -1,6 +1,8 @@
 import streamlit as st
 import random
 import pandas as pd
+import numpy as np
+import plotly.express as px
 from time import sleep
 
 # -------------------------
@@ -12,23 +14,17 @@ st.set_page_config(page_title="Smart Factory Dashboard", layout="wide")
 # Sidebar Controls
 # -------------------------
 st.sidebar.title("⚙️ Control Panel")
-view = st.sidebar.selectbox(
-    "Select View",
-    ["Overview", "Detailed"],
-    key="view_select"
-)
+view = st.sidebar.selectbox("Select View", ["Overview", "Detailed"])
+show_ai = st.sidebar.checkbox("Show AI Insights", value=True)
 
-# -------------------------
 # File Upload using session_state
-# -------------------------
 if "uploaded_file" not in st.session_state:
     st.session_state.uploaded_file = None
 
 uploaded_file = st.sidebar.file_uploader("📂 Upload CSV for AI Analysis", type=["csv"])
-if uploaded_file is not None:
+if uploaded_file:
     st.session_state.uploaded_file = uploaded_file
 
-# Load uploaded data
 if st.session_state.uploaded_file:
     user_data = pd.read_csv(st.session_state.uploaded_file)
     st.sidebar.success("File uploaded successfully!")
@@ -48,99 +44,123 @@ while True:
     with placeholder.container():
 
         # -------------------------
-        # Title & Intro
+        # Generate Machine Health Randomly
         # -------------------------
-        st.title("🏭 Smart AI Factory Dashboard")
-        st.markdown("Real-time monitoring | AI Predictions | Industry 4.0")
-
-        # -------------------------
-        # KPI Section
-        # -------------------------
-        st.subheader("📊 Key Performance Indicators")
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Production", f"{random.randint(100,150)} units/hr", "+5%")
-        col2.metric("Efficiency", f"{random.randint(85,95)}%", "+2%")
-        col3.metric("Downtime", f"{random.randint(5,15)} min", "-1 min")
-        col4.metric("Energy Usage", f"{random.randint(400,500)} kWh", "-3%")
-
-        st.markdown("---")
-
-        # -------------------------
-        # Machine Health
-        # -------------------------
-        st.subheader("🏭 Machine Health Monitoring")
-        col1, col2, col3 = st.columns(3)
         health1 = random.randint(70, 100)
         health2 = random.randint(60, 95)
         health3 = random.randint(75, 98)
-        col1.metric("Machine 1", f"{health1}%")
-        col2.metric("Machine 2", f"{health2}%")
-        col3.metric("Machine 3", f"{health3}%")
 
+        # -------------------------
+        # Top Alert Banner
+        # -------------------------
+        alert_message = ""
+        if health1 < 75:
+            alert_message = "🚨 Machine 1 needs maintenance!"
+        elif health2 < 70:
+            alert_message = "🚨 Machine 2 overload detected!"
+        elif health3 < 75:
+            alert_message = "🚨 Machine 3 requires attention!"
+
+        if alert_message:
+            st.markdown(
+                f"<div style='background-color:#ff4b4b; color:white; padding:15px; border-radius:5px; text-align:center; font-size:18px; font-weight:bold;'>{alert_message}</div>",
+                unsafe_allow_html=True
+            )
+
+        # -------------------------
+        # Title
+        # -------------------------
+        st.markdown("<h1 style='text-align:center; color:#1f77b4;'>🏭 Smart AI Factory Dashboard</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align:center; font-size:16px;'>Real-time monitoring | AI Predictions | Industry 4.0</p>", unsafe_allow_html=True)
         st.markdown("---")
 
         # -------------------------
-        # AI Decision Engine
+        # Tabs
         # -------------------------
-        st.subheader("🤖 AI Decision Engine")
-        if health2 < 70:
-            st.error("🚨 AI Action: Reduce load on Machine 2")
-        elif health1 < 75:
-            st.warning("⚠️ AI Action: Schedule maintenance")
-        else:
-            st.success("✅ AI: System operating optimally")
-
-        st.markdown("---")
+        tab1, tab2, tab3 = st.tabs(["Overview", "Machine Health", "AI Insights"])
 
         # -------------------------
-        # Production & Energy Charts
+        # Tab 1: Overview
         # -------------------------
-        st.subheader("📊 Production & Energy Trends")
-        data = pd.DataFrame({
-            "Production": [random.randint(90,150) for _ in range(6)],
-            "Energy": [random.randint(400,500) for _ in range(6)]
-        })
-        st.line_chart(data)
+        with tab1:
+            st.subheader("📊 Key Performance Indicators")
+            col1, col2, col3, col4 = st.columns(4)
 
-        st.markdown("---")
+            prod = random.randint(100,150)
+            eff = random.randint(85,95)
+            downtime = random.randint(5,15)
+            energy = random.randint(400,500)
+
+            col1.metric("Production", f"{prod} units/hr", "+5%")
+            col2.metric("Efficiency", f"{eff}%", "+2%")
+            col3.metric("Downtime", f"{downtime} min", "-1 min")
+            col4.metric("Energy Usage", f"{energy} kWh", "-3%")
+
+            st.markdown("---")
+
+            # Production & Energy Trends - Plotly
+            st.subheader("📈 Production & Energy Trends")
+            data = pd.DataFrame({
+                "Time": pd.date_range("2026-04-09", periods=6),
+                "Production": [random.randint(90,150) for _ in range(6)],
+                "Energy": [random.randint(400,500) for _ in range(6)]
+            })
+            fig = px.line(data, x="Time", y=["Production","Energy"], markers=True)
+            st.plotly_chart(fig, use_container_width=True)
+
+            st.markdown("---")
+
+            # Inventory
+            st.subheader("📦 Inventory Status")
+            col1, col2 = st.columns(2)
+            col1.metric("Raw Material", f"{random.randint(200,500)} units")
+            col2.metric("Finished Goods", f"{random.randint(100,300)} units")
 
         # -------------------------
-        # Inventory Status
+        # Tab 2: Machine Health
         # -------------------------
-        st.subheader("📦 Inventory Status")
-        col1, col2 = st.columns(2)
-        col1.metric("Raw Material", f"{random.randint(200,500)} units")
-        col2.metric("Finished Goods", f"{random.randint(100,300)} units")
+        with tab2:
+            st.subheader("🏭 Machine Health Monitoring")
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Machine 1", f"{health1}%", delta="Good" if health1>80 else "Check", delta_color="normal")
+            col2.metric("Machine 2", f"{health2}%", delta="Good" if health2>70 else "Warning", delta_color="inverse")
+            col3.metric("Machine 3", f"{health3}%", delta="Good" if health3>75 else "Check", delta_color="inverse")
 
-        st.markdown("---")
-
-        # -------------------------
-        # System Integration Flow
-        # -------------------------
-        st.subheader("🔄 System Integration Flow")
-        st.info("Sensors → Data Collection → AI Model → Dashboard → Decision Making")
-
-        st.markdown("---")
-
-        # -------------------------
-        # AI Insights from Uploaded Data
-        # -------------------------
-        st.subheader("🤖 AI Insights from Uploaded Data")
-        if user_data is not None:
-            if "Value" in user_data.columns:
-                next_val = user_data["Value"].mean()
-                st.info(f"📈 Predicted next Value: {next_val:.2f}")
+            st.markdown("---")
+            st.subheader("🤖 AI Decision Engine")
+            if health2 < 70:
+                st.error("🚨 Reduce load on Machine 2")
+            elif health1 < 75:
+                st.warning("⚠️ Schedule maintenance")
             else:
-                st.warning("⚠️ Uploaded CSV missing 'Value' column")
-        else:
-            st.info("Upload a CSV in the sidebar to see AI insights")
+                st.success("✅ System operating optimally")
 
-        st.markdown("---")
+        # -------------------------
+        # Tab 3: AI Insights
+        # -------------------------
+        with tab3:
+            if show_ai:
+                st.subheader("🤖 AI Insights from Uploaded Data")
+                if user_data is not None:
+                    if "Value" in user_data.columns:
+                        # Trend chart
+                        fig2 = px.line(user_data, y="Value", title="Uploaded Data Trend", markers=True)
+                        st.plotly_chart(fig2, use_container_width=True)
+                        # Prediction
+                        next_val = user_data["Value"].mean()
+                        st.info(f"📈 Predicted next Value: {next_val:.2f}")
+                    else:
+                        st.warning("⚠️ Uploaded CSV missing 'Value' column")
+                else:
+                    st.info("Upload a CSV in the sidebar to see AI insights")
+            else:
+                st.info("AI Insights disabled via sidebar toggle")
 
         # -------------------------
         # Footer
         # -------------------------
+        st.markdown("---")
         st.success("✅ System Status: Fully Operational")
         st.caption("Smart Factory System | Hackathon Demo Project")
 
-    sleep(5)  # Refresh every 5 seconds
+    sleep(5)
