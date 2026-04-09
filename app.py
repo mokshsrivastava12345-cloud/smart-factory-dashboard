@@ -6,13 +6,21 @@ from time import sleep
 # ---------- PAGE CONFIG ----------
 st.set_page_config(page_title="Smart Factory Dashboard", layout="wide")
 
+# ---------- SESSION STATE (for dynamic KPI) ----------
+if "prev_data" not in st.session_state:
+    st.session_state.prev_data = {
+        "prod": 120,
+        "eff": 90,
+        "down": 10,
+        "energy": 450
+    }
+
 # ---------- CUSTOM UI ----------
 st.markdown("""
 <style>
 .stApp {
     background-color: #0e1117;
 }
-
 .header {
     padding: 20px;
     border-radius: 12px;
@@ -21,7 +29,6 @@ st.markdown("""
     text-align: center;
     margin-bottom: 20px;
 }
-
 .card {
     background-color: #1c1f26;
     padding: 20px;
@@ -46,6 +53,12 @@ user_data = None
 if uploaded_file is not None:
     user_data = pd.read_csv(uploaded_file)
 
+# ---------- FUNCTION FOR DELTA ----------
+def get_delta(current, previous):
+    change = current - previous
+    percent = (change / previous) * 100
+    return f"{percent:+.1f}%"
+
 # ---------- LIVE LOOP ----------
 placeholder = st.empty()
 
@@ -60,17 +73,34 @@ while True:
         </div>
         """, unsafe_allow_html=True)
 
+        # ---------- GENERATE NEW VALUES ----------
+        prod = random.randint(100,150)
+        eff = random.randint(85,95)
+        down = random.randint(5,15)
+        energy = random.randint(400,500)
+
+        prev = st.session_state.prev_data
+
         # ---------- KPI ----------
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("📊 Key Performance Indicators")
 
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Production", f"{random.randint(100,150)} units/hr", "+5%")
-        c2.metric("Efficiency", f"{random.randint(85,95)}%", "+2%")
-        c3.metric("Downtime", f"{random.randint(5,15)} min", "-1 min")
-        c4.metric("Energy", f"{random.randint(400,500)} kWh", "-3%")
+
+        c1.metric("Production", f"{prod} units/hr", get_delta(prod, prev["prod"]))
+        c2.metric("Efficiency", f"{eff}%", get_delta(eff, prev["eff"]))
+        c3.metric("Downtime", f"{down} min", get_delta(down, prev["down"]))
+        c4.metric("Energy", f"{energy} kWh", get_delta(energy, prev["energy"]))
 
         st.markdown('</div>', unsafe_allow_html=True)
+
+        # ---------- UPDATE PREVIOUS ----------
+        st.session_state.prev_data = {
+            "prod": prod,
+            "eff": eff,
+            "down": down,
+            "energy": energy
+        }
 
         # ---------- MACHINE HEALTH ----------
         st.markdown('<div class="card">', unsafe_allow_html=True)
@@ -86,7 +116,7 @@ while True:
         m2.metric("Machine 2", f"{h2}%")
         m3.metric("Machine 3", f"{h3}%")
 
-        # ---------- ALERT LOGIC ----------
+        # ---------- ALERT ----------
         popup = False
         message = ""
 
@@ -97,7 +127,6 @@ while True:
             popup = True
             message = "⚠️ Maintenance required soon!"
 
-        # Normal alert
         if popup:
             st.error(message)
         else:
@@ -139,16 +168,6 @@ while True:
         st.line_chart(chart_data)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # ---------- INVENTORY ----------
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.subheader("📦 Inventory")
-
-        i1, i2 = st.columns(2)
-        i1.metric("Raw Material", f"{random.randint(200,500)} units")
-        i2.metric("Finished Goods", f"{random.randint(100,300)} units")
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
         # ---------- AI INSIGHTS ----------
         if view == "AI Insights":
             st.markdown('<div class="card">', unsafe_allow_html=True)
@@ -172,7 +191,6 @@ while True:
                     st.info(f"🚚 Avg Speed: {avg_speed:.2f} km/h")
 
                 if "stock_level" in user_data.columns:
-                    st.subheader("📊 Stock Trend")
                     st.line_chart(user_data["stock_level"])
 
             else:
