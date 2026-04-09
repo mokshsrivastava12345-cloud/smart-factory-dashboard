@@ -242,20 +242,35 @@ while True:
 
             st.markdown('</div>', unsafe_allow_html=True)
 
-            # ---------- DIGITAL TWIN ----------
+            # ---------- DIGITAL TWIN (GRAPH + VALUES) ----------
             if use_csv and user_data is not None:
                 st.markdown('<div class="card">', unsafe_allow_html=True)
-                st.subheader("🔮 Digital Twin – Future Simulation")
+                st.subheader("🔮 Digital Twin – Future Prediction")
 
                 future_df = simulate_future(user_data)
 
+                # GRAPH
                 st.line_chart(future_df)
 
-                if future_df["Future Stock"].min() < 100:
-                    st.error("🚨 Future Risk: Low Stock")
+                st.markdown("### 🔢 Step-wise Predictions")
 
-                if future_df["Future Speed"].min() < 10:
-                    st.warning("⚠️ Future Delay Risk")
+                # VALUES
+                for i, row in future_df.iterrows():
+                    st.write(f"⏱ Step {i+1}: Stock = {row['Future Stock']} | Speed = {row['Future Speed']}")
+
+                st.markdown("---")
+
+                min_stock = future_df["Future Stock"].min()
+                min_speed = future_df["Future Speed"].min()
+
+                if min_stock < 100:
+                    st.error(f"🚨 Future Risk: Stock may drop to {min_stock}")
+
+                if min_speed < 10:
+                    st.warning(f"⚠️ Future Risk: Speed may drop to {min_speed}")
+
+                if min_stock >= 100 and min_speed >= 10:
+                    st.success("✅ Future System Stable")
 
                 st.markdown('</div>', unsafe_allow_html=True)
 
