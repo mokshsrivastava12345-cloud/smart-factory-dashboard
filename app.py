@@ -9,13 +9,10 @@ st.set_page_config(page_title="Smart Factory Dashboard", layout="wide")
 # ---------- CUSTOM UI ----------
 st.markdown("""
 <style>
-
-/* Background */
 .stApp {
     background-color: #0e1117;
 }
 
-/* Header */
 .header {
     padding: 20px;
     border-radius: 12px;
@@ -25,7 +22,6 @@ st.markdown("""
     margin-bottom: 20px;
 }
 
-/* Cards */
 .card {
     background-color: #1c1f26;
     padding: 20px;
@@ -33,12 +29,6 @@ st.markdown("""
     margin-bottom: 20px;
     box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
 }
-
-/* Titles */
-h2 {
-    color: #00d4ff;
-}
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -51,7 +41,7 @@ st.sidebar.markdown("---")
 st.sidebar.write("👤 Dashboard Lead")
 st.sidebar.write("🟢 System Active")
 
-# Load data
+# Load CSV
 user_data = None
 if uploaded_file is not None:
     user_data = pd.read_csv(uploaded_file)
@@ -70,16 +60,15 @@ while True:
         </div>
         """, unsafe_allow_html=True)
 
-        # ---------- KPI SECTION ----------
+        # ---------- KPI ----------
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("📊 Key Performance Indicators")
 
-        col1, col2, col3, col4 = st.columns(4)
-
-        col1.metric("Production", f"{random.randint(100,150)} units/hr", "+5%")
-        col2.metric("Efficiency", f"{random.randint(85,95)}%", "+2%")
-        col3.metric("Downtime", f"{random.randint(5,15)} min", "-1 min")
-        col4.metric("Energy", f"{random.randint(400,500)} kWh", "-3%")
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Production", f"{random.randint(100,150)} units/hr", "+5%")
+        c2.metric("Efficiency", f"{random.randint(85,95)}%", "+2%")
+        c3.metric("Downtime", f"{random.randint(5,15)} min", "-1 min")
+        c4.metric("Energy", f"{random.randint(400,500)} kWh", "-3%")
 
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -87,45 +76,76 @@ while True:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("🏭 Machine Health")
 
-        c1, c2, c3 = st.columns(3)
+        m1, m2, m3 = st.columns(3)
 
         h1 = random.randint(70, 100)
         h2 = random.randint(60, 95)
         h3 = random.randint(75, 98)
 
-        c1.metric("Machine 1", f"{h1}%")
-        c2.metric("Machine 2", f"{h2}%")
-        c3.metric("Machine 3", f"{h3}%")
+        m1.metric("Machine 1", f"{h1}%")
+        m2.metric("Machine 2", f"{h2}%")
+        m3.metric("Machine 3", f"{h3}%")
 
-        # Alerts
+        # ---------- ALERT LOGIC ----------
+        popup = False
+        message = ""
+
         if h2 < 70:
-            st.error("🚨 Machine 2 needs immediate attention!")
+            popup = True
+            message = "🚨 Machine 2 Critical! Immediate action required!"
         elif h1 < 75:
-            st.warning("⚠️ Maintenance required soon")
+            popup = True
+            message = "⚠️ Maintenance required soon!"
+
+        # Normal alert
+        if popup:
+            st.error(message)
         else:
             st.success("✅ All machines operating normally")
 
+        # ---------- POPUP ----------
+        if popup:
+            st.markdown(f"""
+            <div style="
+                position: fixed;
+                top: 25%;
+                left: 30%;
+                width: 40%;
+                background-color: #ff4b4b;
+                color: white;
+                padding: 25px;
+                border-radius: 15px;
+                text-align: center;
+                font-size: 22px;
+                z-index: 9999;
+                box-shadow: 0px 0px 25px rgba(0,0,0,0.6);
+            ">
+                ⚠️ SYSTEM ALERT<br><br>
+                {message}
+            </div>
+            """, unsafe_allow_html=True)
+
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # ---------- CHART SECTION ----------
+        # ---------- CHART ----------
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("📈 Production & Energy Trends")
 
-        data = pd.DataFrame({
+        chart_data = pd.DataFrame({
             "Production": [random.randint(90,150) for _ in range(6)],
             "Energy": [random.randint(400,500) for _ in range(6)]
         })
 
-        st.line_chart(data)
+        st.line_chart(chart_data)
         st.markdown('</div>', unsafe_allow_html=True)
 
         # ---------- INVENTORY ----------
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("📦 Inventory")
 
-        c1, c2 = st.columns(2)
-        c1.metric("Raw Material", f"{random.randint(200,500)} units")
-        c2.metric("Finished Goods", f"{random.randint(100,300)} units")
+        i1, i2 = st.columns(2)
+        i1.metric("Raw Material", f"{random.randint(200,500)} units")
+        i2.metric("Finished Goods", f"{random.randint(100,300)} units")
 
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -137,24 +157,20 @@ while True:
             if user_data is not None:
                 st.dataframe(user_data)
 
-                # Low Stock Alert
                 if "stock_level" in user_data.columns:
                     low_stock = user_data[user_data["stock_level"] < 100]
                     if not low_stock.empty:
-                        st.error(f"🚨 Low stock detected in {len(low_stock)} records")
+                        st.error(f"🚨 Low stock in {len(low_stock)} records")
 
-                # Truck Alerts
                 if "truck_status" in user_data.columns:
                     stopped = user_data[user_data["truck_status"] == "Stopped"]
                     if not stopped.empty:
                         st.warning(f"⚠️ {len(stopped)} truck(s) stopped")
 
-                # Speed Analysis
                 if "speed_kmph" in user_data.columns:
                     avg_speed = user_data["speed_kmph"].mean()
-                    st.info(f"🚚 Average Speed: {avg_speed:.2f} km/h")
+                    st.info(f"🚚 Avg Speed: {avg_speed:.2f} km/h")
 
-                # Stock Chart
                 if "stock_level" in user_data.columns:
                     st.subheader("📊 Stock Trend")
                     st.line_chart(user_data["stock_level"])
