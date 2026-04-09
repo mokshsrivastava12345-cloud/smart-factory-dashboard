@@ -2,7 +2,6 @@ import streamlit as st
 import random
 import pandas as pd
 import numpy as np
-import plotly.express as px
 from time import sleep
 
 # -------------------------
@@ -98,15 +97,13 @@ while True:
 
             st.markdown("---")
 
-            # Production & Energy Trends - Plotly
+            # Production & Energy Trends - Streamlit chart
             st.subheader("📈 Production & Energy Trends")
             data = pd.DataFrame({
-                "Time": pd.date_range("2026-04-09", periods=6),
                 "Production": [random.randint(90,150) for _ in range(6)],
                 "Energy": [random.randint(400,500) for _ in range(6)]
             })
-            fig = px.line(data, x="Time", y=["Production","Energy"], markers=True)
-            st.plotly_chart(fig, use_container_width=True)
+            st.line_chart(data)
 
             st.markdown("---")
 
@@ -143,10 +140,7 @@ while True:
                 st.subheader("🤖 AI Insights from Uploaded Data")
                 if user_data is not None:
                     if "Value" in user_data.columns:
-                        # Trend chart
-                        fig2 = px.line(user_data, y="Value", title="Uploaded Data Trend", markers=True)
-                        st.plotly_chart(fig2, use_container_width=True)
-                        # Prediction
+                        st.line_chart(user_data["Value"])
                         next_val = user_data["Value"].mean()
                         st.info(f"📈 Predicted next Value: {next_val:.2f}")
                     else:
